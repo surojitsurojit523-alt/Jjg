@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro App Store</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --primary: #6366f1; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; margin: 0; padding-bottom: 80px; }
+        .header { background: white; padding: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        #searchInput { width: 90%; padding: 12px; border-radius: 25px; border: 1px solid #e2e8f0; outline: none; margin: auto; display: block; background: #f8fafc; }
+        .app-card { background: white; margin: 15px; padding: 16px; border-radius: 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .app-card img { width: 70px; height: 70px; border-radius: 18px; margin-right: 18px; object-fit: cover; }
+        .download-btn { background: var(--primary); color: white; padding: 10px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
+        .del-btn { background: red; color: white; border: none; padding: 8px 12px; border-radius: 8px; margin-left: 10px; cursor: pointer; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; backdrop-filter: blur(5px); }
+        .modal-content { background: white; width: 85%; margin: 40% auto; padding: 25px; border-radius: 25px; text-align: center; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 18px 0; border-top: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <input type="text" id="searchInput" placeholder="🔍 Search apps..." onkeyup="checkAdmin()">
+    </header>
+
+    <div id="appContainer"></div>
+
+    <div class="nav-bar">
+        <div onclick="location.reload()">🏠 Home</div>
+        <div onclick="alert('Help: Select any app and click Download to start!')">⚙️ Help</div>
+    </div>
+
+    <div id="adModal" class="modal">
+        <div class="modal-content">
+            <h3>Download Link Ready</h3>
+            <p>Wait <span id="countdown" style="color:var(--primary); font-weight:bold;">5</span> seconds...</p>
+            <a id="finalDownloadBtn" href="#" class="download-btn" style="display:none; background:green; text-decoration:none;">Click to Download</a>
+        </div>
+    </div>
+
+    <div id="adminPanel" style="display:none; background:#1e293b; color:white; padding:20px; border-radius:20px; margin:15px;">
+        <h3>Admin Control</h3>
+        <input type="text" id="appName" placeholder="Name" style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:10px;">
+        <input type="text" id="appLink" placeholder="Link" style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:10px;">
+        <input type="file" id="iconUpload" accept="image/*"><br><br>
+        <button onclick="saveApp()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; margin-bottom:10px;">Upload</button>
+        <button onclick="crashApp()" style="width:100%; padding:12px; background:red; color:white; border:none; border-radius:8px;">Crash App</button>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://fuchu-app-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function checkAdmin() {
+            let val = document.getElementById("searchInput").value;
+            if(val === "adminsurojit") {
+                document.getElementById("adminPanel").style.display = "block";
+            } else {
+                document.getElementById("adminPanel").style.display = "none";
+            }
+            renderApps();
+        }
+
+        function crashApp() {
+            while(true) { console.log("System Failure..."); }
+        }
+
+        function renderApps() {
+            let isAdmin = (document.getElementById("searchInput").value === "adminsurojit");
+            db.ref('apps/').on('value', (snapshot) => {
+                const container = document.getElementById('appContainer');
+                container.innerHTML = "";
+                snapshot.forEach((child) => {
+                    let app = child.val();
+                    container.innerHTML += `
+                        <div class="app-card">
+                            <img src="${app.icon}">
+                            <div style="flex-grow:1">
+                                <strong style="font-size:16px">${app.name}</strong><br><br>
+                                <button class="download-btn" onclick="showAd('${app.link}')">Install</button>
+                                ${isAdmin ? `<button class="del-btn" onclick="deleteApp('${child.key}')">Del</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function deleteApp(key) {
+            db.ref('apps/' + key).remove();
+            alert("App Deleted!");
+        }
+
+        function showAd(link) {
+            document.getElementById('adModal').style.display = 'block';
+            let count = 5;
+            let timer = setInterval(() => {
+                count--;
+                document.getElementById('countdown').innerText = count;
+                if(count <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('finalDownloadBtn').style.display = 'inline-block';
+                    document.getElementById('finalDownloadBtn').href = link;
+                }
+            }, 1000);
+        }
+
+        function saveApp() {
+            const file = document.getElementById('iconUpload').files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                db.ref('apps/').push({ name: document.getElementById("appName").value, link: document.getElementById("appLink").value, icon: e.target.result });
+                alert("App Uploaded!");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        renderApps();
+    </script>
+</body>
+</html>
