@@ -118,10 +118,10 @@
             };
             reader.readAsDataURL(file);
         }
-// এই অংশটুকু কপি করুন
+
 function searchApps() {
     let input = document.getElementById('searchInput').value.toLowerCase();
-    let apps = document.getElementsByClassName('app-item');
+    let apps = document.getElementsByClassName('app-card');
 
     for (let i = 0; i < apps.length; i++) {
         let appName = apps[i].innerText.toLowerCase();
@@ -132,7 +132,6 @@ function searchApps() {
         }
     }
 }
-// কপি করা শেষ
         
         renderApps();
     </script>
