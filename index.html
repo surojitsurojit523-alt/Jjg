@@ -118,7 +118,22 @@
             };
             reader.readAsDataURL(file);
         }
+// এই অংশটুকু কপি করুন
+function searchApps() {
+    let input = document.getElementById('searchInput').value.toLowerCase();
+    let apps = document.getElementsByClassName('app-item');
 
+    for (let i = 0; i < apps.length; i++) {
+        let appName = apps[i].innerText.toLowerCase();
+        if (appName.includes(input)) {
+            apps[i].style.display = ""; 
+        } else {
+            apps[i].style.display = "none";
+        }
+    }
+}
+// কপি করা শেষ
+        
         renderApps();
     </script>
 </body>
