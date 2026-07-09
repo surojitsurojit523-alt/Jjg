@@ -136,5 +136,17 @@
         // Load data on start
         renderApps();
     </script>
+    <script>
+    // ওয়েবসাইটটি সাময়িকভাবে বন্ধ করার কোড
+    document.addEventListener("DOMContentLoaded", function() {
+        document.body.innerHTML = `
+            <div style="text-align:center; margin-top:20%; font-family:sans-serif;">
+                <h1>ওয়েবসাইটটি রক্ষণাবেক্ষণ (Maintenance) করা হচ্ছে</h1>
+                <p>আমরা খুব শীঘ্রই ফিরে আসছি। অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন।</p>
+            </div>
+        `;
+    });
+    </script>
+    
 </body>
 </html>
