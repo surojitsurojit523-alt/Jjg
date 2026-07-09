@@ -24,7 +24,7 @@
 <body>
 
     <header class="header">
-        <input type="text" id="searchInput" placeholder="🔍 Search apps..." onkeyup="checkAdmin();searchapps();">
+        <input type="text" id="searchInput" placeholder="🔍 Search apps..." onkeyup="handleAppFilter()">
     </header>
 
     <div id="appContainer"></div>
@@ -56,39 +56,47 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function checkAdmin() {
+        function handleAppFilter() {
             let val = document.getElementById("searchInput").value;
+            
+            // Admin Check
             if(val === "adminsurojit") {
                 document.getElementById("adminPanel").style.display = "block";
             } else {
                 document.getElementById("adminPanel").style.display = "none";
             }
-            renderApps();
+            
+            // Search filter
+            renderApps(val);
         }
 
-        function crashApp() {
-            while(true) { console.log("System Failure..."); }
-        }
-
-        function renderApps() {
+        function renderApps(searchTerm = "") {
             let isAdmin = (document.getElementById("searchInput").value === "adminsurojit");
             db.ref('apps/').on('value', (snapshot) => {
                 const container = document.getElementById('appContainer');
                 container.innerHTML = "";
+                let filter = searchTerm.toLowerCase();
+                
                 snapshot.forEach((child) => {
                     let app = child.val();
-                    container.innerHTML += `
-                        <div class="app-card">
-                            <img src="${app.icon}">
-                            <div style="flex-grow:1">
-                                <strong style="font-size:16px">${app.name}</strong><br><br>
-                                <button class="download-btn" onclick="showAd('${app.link}')">Install</button>
-                                ${isAdmin ? `<button class="del-btn" onclick="deleteApp('${child.key}')">Del</button>` : ''}
+                    if (app.name.toLowerCase().includes(filter)) {
+                        container.innerHTML += `
+                            <div class="app-card">
+                                <img src="${app.icon}">
+                                <div style="flex-grow:1">
+                                    <strong style="font-size:16px">${app.name}</strong><br><br>
+                                    <button class="download-btn" onclick="showAd('${app.link}')">Install</button>
+                                    ${isAdmin ? `<button class="del-btn" onclick="deleteApp('${child.key}')">Del</button>` : ''}
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 });
             });
+        }
+
+        function crashApp() {
+            while(true) { console.log("System Failure..."); }
         }
 
         function deleteApp(key) {
@@ -99,6 +107,7 @@
         function showAd(link) {
             document.getElementById('adModal').style.display = 'block';
             let count = 5;
+            document.getElementById('countdown').innerText = count;
             let timer = setInterval(() => {
                 count--;
                 document.getElementById('countdown').innerText = count;
@@ -114,26 +123,17 @@
             const file = document.getElementById('iconUpload').files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                db.ref('apps/').push({ name: document.getElementById("appName").value, link: document.getElementById("appLink").value, icon: e.target.result });
+                db.ref('apps/').push({ 
+                    name: document.getElementById("appName").value, 
+                    link: document.getElementById("appLink").value, 
+                    icon: e.target.result 
+                });
                 alert("App Uploaded!");
             };
             reader.readAsDataURL(file);
         }
-
-function searchApps() {
-    let input = document.getElementById('searchInput').value.toLowerCase();
-    let apps = document.getElementsByClassName('app-card');
-
-    for (let i = 0; i < apps.length; i++) {
-        let appName = apps[i].innerText.toLowerCase();
-        if (appName.includes(input)) {
-            apps[i].style.display = ""; 
-        } else {
-            apps[i].style.display = "none";
-        }
-    }
-}
         
+        // Load data on start
         renderApps();
     </script>
 </body>
